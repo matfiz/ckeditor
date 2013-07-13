@@ -1,9 +1,9 @@
 require 'rails'
-require 'ckeditor'
+#require 'ckeditor'
 
 module Ckeditor
   class Engine < ::Rails::Engine
-    isolate_namespace Ckeditor
+    #isolate_namespace Ckeditor
     
     config.action_view.javascript_expansions[:ckeditor] = "ckeditor/ckeditor"
     
