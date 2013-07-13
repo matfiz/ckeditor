@@ -12,7 +12,8 @@ module Ckeditor
       ActiveSupport.on_load :action_view do
         ActionView::Base.send :include, Ckeditor::Helpers::ViewHelper
         ActionView::Base.send :include, Ckeditor::Helpers::FormHelper
-        ActionView::Helpers::FormBuilder.send :include, Ckeditor::Helpers::FormBuilder
+        #ActionView::Helpers::FormBuilder.send :include, Ckeditor::Helpers::FormBuilder
+	require "ckeditor/hooks/formtastic"
       end
     end
     
