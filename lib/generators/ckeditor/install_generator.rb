@@ -1,78 +1,85 @@
 require 'rails/generators'
-require 'rails/generators/migration'
+require 'fileutils'
 
 module Ckeditor
   module Generators
     class InstallGenerator < Rails::Generators::Base
-      include Rails::Generators::Migration
+      class_option :version, :type => :string, :default => Ckeditor::Version::EDITOR,
+                   :desc => "Version of ckeditor which be install (by default #{Ckeditor::Version::EDITOR})"
 
-      desc "Generates migration for Asset (Picture, AttachmentFile) models"
+      class_option :orm, :type => :string, :default => 'active_record',
+                   :desc => "Backend processor for upload support (by default active_record)"
       
-      # ORM configuration
-      class_option :orm, :type => :string, :default => "active_record",
-        :desc => "Backend processor for upload support"
-      
-      class_option :backend, :type => :string, :default => 'paperclip',
-        :desc => "Paperclip (by default) or carrierwave"
-      
+      class_option :path, :type => :string, :default => Ckeditor.path,
+                   :desc => "Ckeditor install directory destination (by default #{Ckeditor.path})"
+
+      desc "Download and install ckeditor into destination folder"
+
       def self.source_root
         @source_root ||= File.expand_path(File.join(File.dirname(__FILE__), 'templates'))
-      end
-
-      def self.next_migration_number(dirname)
-        Time.now.strftime("%Y%m%d%H%M%S")
       end
 
       # copy configuration
       def copy_initializer
         template "ckeditor.rb", "config/initializers/ckeditor.rb"
       end
-      
-      def mount_engine
-        route "mount Ckeditor::Engine => '/ckeditor'"
-      end
 
-      def create_models
-        [:asset, :picture, :attachment_file].each do |filename|
-          template "#{generator_dir}/ckeditor/#{filename}.rb",
-                   File.join('app/models', ckeditor_dir, "#{filename}.rb")
-        end
+      # copy ckeditor files
+      def install_ckeditor
+        say_status("fetching #{filename}", "", :green)
         
-        if backend == "carrierwave"
-          template "#{uploaders_dir}/uploaders/ckeditor_attachment_file_uploader.rb",
-                   File.join("app/uploaders", "ckeditor_attachment_file_uploader.rb")
-          
-          template "#{uploaders_dir}/uploaders/ckeditor_picture_uploader.rb",
-                   File.join("app/uploaders", "ckeditor_picture_uploader.rb")
-        end
-      end
+        in_root do
+          filepath = "tmp/#{filename}"
+          get(download_url, filepath)
 
-      def create_migration
-        if ["active_record"].include?(orm)
-          migration_template "#{generator_dir}/migration.rb", File.join('db/migrate', "create_ckeditor_assets.rb")
+          if File.exist?(filepath)
+            FileUtils.mkdir_p(install_dir)
+            Ckeditor::Utils.extract(filepath, install_dir)
+            FileUtils.rm_rf(filepath)
+          end
         end
       end
       
+      def update_javascripts      
+        in_root do
+          directory "ckeditor/filebrowser", "#{install_dir}/ckeditor/filebrowser"
+          directory "ckeditor/plugins", "#{install_dir}/ckeditor/plugins"
+          copy_file "ckeditor/config.js", "#{install_dir}/ckeditor/config.js", :force => true
+          
+          gsub_file "#{install_dir}/ckeditor/plugins/image/dialogs/image.js", 
+                    /id\:\'uploadButton\'\,filebrowser\:\'info:txtUrl\'/,
+                    "id:'uploadButton',filebrowser:{target:'info:txtUrl',action:'QuickUpload',params:b.config.filebrowserParams()}"
+        end	
+      end
+
+      def download_javascripts
+        js_dir = "#{install_dir}/ckeditor/filebrowser/javascripts"
+
+        say_status("fetching rails.js", "", :green)
+        get "https://github.com/rails/jquery-ujs/raw/master/src/rails.js", "#{js_dir}/rails.js"
+
+        say_status("fetching fileuploader.js", "", :green)
+        get "https://raw.github.com/galetahub/file-uploader/master/client/fileuploader.js", "#{js_dir}/fileuploader.js"
+
+        say_status("fetching jquery-1.6.2.min.js", "", :green)
+        get "https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js", "#{js_dir}/jquery.js"
+
+        say_status("fetching jquery.tmpl.min.js", "", :green)
+        get "https://raw.github.com/jquery/jquery-tmpl/master/jquery.tmpl.min.js", "#{js_dir}/jquery.tmpl.js"
+      end
+
       protected
 
-        def ckeditor_dir
-          'ckeditor'
+        def download_url
+          "http://download.cksource.com/CKEditor/CKEditor/CKEditor%20#{options[:version]}/#{filename}"
         end
 
-        def generator_dir
-          @generator_dir ||= [orm, backend].join('/')
+        def filename
+          "ckeditor_#{options[:version]}.tar.gz"
         end
         
-        def uploaders_dir
-          @uploaders_dir ||= ['base', 'carrierwave'].join('/')
-        end
-        
-        def orm
-          options[:orm] || "active_record"
-        end
-        
-        def backend
-          options[:backend] || "paperclip"
+        def install_dir
+          options[:path] || Ckeditor.path
         end
     end
   end

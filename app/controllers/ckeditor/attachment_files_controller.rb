@@ -1,4 +1,4 @@
-class Ckeditor::AttachmentFilesController < Ckeditor::ApplicationController
+class Ckeditor::AttachmentFilesController < Ckeditor::BaseController
 
   def index
     @attachments = Ckeditor.attachment_file_model.find_all(ckeditor_attachment_files_scope)
@@ -12,7 +12,7 @@ class Ckeditor::AttachmentFilesController < Ckeditor::ApplicationController
   
   def destroy
     @attachment.destroy
-    respond_with(@attachment, :location => attachment_files_path)
+    respond_with(@attachment, :location => ckeditor_attachment_files_path)
   end
   
   protected

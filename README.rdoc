@@ -5,7 +5,7 @@ the results users have when publishing it. It brings to the web common editing f
 
 == Features
 
-* Rails 3.2 integration
+* Rails 3 integration
 * Files browser
 * HTML5 files uploader
 * Hooks for formtastic and simple_form forms generators
@@ -14,13 +14,23 @@ the results users have when publishing it. It brings to the web common editing f
 
 == Install
 
-Rails 3.2:
+  gem install ckeditor
 
-  gem "ckeditor", "3.7.0.rc3"
+Or via bundler:
 
-Rails <= 3.0:
+  gem "ckeditor"
 
-  gem "ckeditor", "3.6.3"
+=== Download ckeditor
+  
+  rails generate ckeditor:install
+
+You can pass version of ckeditor to download (http://ckeditor.com/download/releases):
+
+  rails generate ckeditor:install --version=3.5.4
+
+=== Install destination
+
+  rails generate ckeditor:install --path=public/assets
 
 === Now generate models for store uploading files
 
@@ -30,27 +40,27 @@ For active_record orm is used paperclip gem (it's by default).
 
   gem "paperclip"
   
-  rails generate ckeditor:install --orm=active_record --backend=paperclip
+  rails generate ckeditor:models --orm=active_record --backend=paperclip
   
 ==== ActiveRecord + carrierwave
 
   gem "carrierwave"
   gem "mini_magick"
 
-  rails generate ckeditor:install --orm=active_record --backend=carrierwave
+  rails generate ckeditor:models --orm=active_record --backend=carrierwave
 
 ==== Mongoid + paperclip
 
   gem 'mongoid-paperclip', :require => 'mongoid_paperclip'
   
-  rails generate ckeditor:install --orm=mongoid --backend=paperclip
+  rails generate ckeditor:models --orm=mongoid --backend=paperclip
 
 ==== Mongoid + carrierwave
 
   gem "carrierwave-mongoid", :require => 'carrierwave/mongoid'
   gem "mini_magick"
 
-  rails generate ckeditor:install --orm=mongoid --backend=carrierwave
+  rails generate ckeditor:models --orm=mongoid --backend=carrierwave
 
 Available orms:
 * active_record
@@ -64,19 +74,14 @@ Autoload ckeditor models folder (application.rb):
 
 == Usage
 
-Include ckeditor javascripts rails 3.2:
-
-  //= require ckeditor/init
-
-or
-
-  <%= javascript_include_tag "ckeditor/init" %>  
-
-
-Rails <= 3.0:
+Include ckeditor javascripts:
 
   <%= javascript_include_tag :ckeditor %>
 
+or (for rails 3.1):
+
+  <%= javascript_include_tag "/javascripts/ckeditor/ckeditor.js" %>
+  
 Form helpers:
 
   cktext_area_tag("test_area", "Ckeditor is the best")
@@ -127,7 +132,7 @@ Jquery sample:
 
 === SimpleForm integration
 
-  <%= form.input :content, :as => :ckeditor, :label => false, :input_html => { :toolbar => 'Full' } %>
+  <%= form.ckeditor :content, :label => false, :input_html => { :toolbar => 'Full' } %>
 
 === Default scope
 

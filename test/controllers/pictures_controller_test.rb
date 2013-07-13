@@ -2,10 +2,7 @@ require 'test_helper'
 
 class PicturesControllerTest < ActionController::TestCase
   tests Ckeditor::PicturesController
-  
   include RawPost
-  include Ckeditor::Engine.routes.url_helpers
-  include ControllerHooks
   
   def setup
     @image = fixture_file_upload('files/rails.png', 'image/png')

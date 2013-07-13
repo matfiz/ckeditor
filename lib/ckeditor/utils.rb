@@ -13,6 +13,11 @@ module Ckeditor
         [basename.parameterize('_'), extension].join.downcase
       end
       
+      def extract(filepath, output)
+        # TODO: need check system OS
+        system("tar --exclude=*.php --exclude=*.asp -C '#{output}' -xzf '#{filepath}' ckeditor/")
+      end
+      
       def js_replace(dom_id, options = {})
         js_options = applay_options(options)
         js = ["if (CKEDITOR.instances['#{dom_id}']) {CKEDITOR.remove(CKEDITOR.instances['#{dom_id}']);}"]
@@ -22,8 +27,8 @@ module Ckeditor
         else
           js << "CKEDITOR.replace('#{dom_id}', { #{js_options} });"
         end
-
-        "$(document).ready(function(){ #{js.join} });".html_safe
+        
+        js.join
       end
       
       def js_fileuploader(uploader_type, options = {})
@@ -43,7 +48,7 @@ module Ckeditor
         
         js_options = applay_options(options)
         
-        "$(document).ready(function(){ new qq.FileUploaderInput({ #{js_options} }); });".html_safe
+        "$(document).ready(function(){ new qq.FileUploaderInput({ #{js_options} }); });"
       end
       
       def applay_options(options)
@@ -61,22 +66,10 @@ module Ckeditor
             else value
           end
           
-          str << %Q{"#{key}": #{item}}
+          str << "#{key}: #{item}"
         end
         
         str.sort.join(',')
-      end
-      
-      def filethumb(filename)
-        extname = filename.blank? ? "unknown" : File.extname(filename).gsub(/^\./, '')
-	      image = "#{extname}.gif"
-	      source = Ckeditor.root_path.join("vendor/assets/javascripts/ckeditor/filebrowser/images/thumbs")
-	      
-	      unless File.exists?(File.join(source, image))
-	        image = "unknown.gif"
-	      end
-	      
-	      File.join(Ckeditor.relative_path, "filebrowser/images/thumbs", image)
       end
     end
   end

@@ -1,4 +1,4 @@
-class Ckeditor::PicturesController < Ckeditor::ApplicationController
+class Ckeditor::PicturesController < Ckeditor::BaseController
 
   def index
     @pictures = Ckeditor.picture_model.find_all(ckeditor_pictures_scope)
@@ -12,7 +12,7 @@ class Ckeditor::PicturesController < Ckeditor::ApplicationController
   
   def destroy
     @picture.destroy
-    respond_with(@picture, :location => pictures_path)
+    respond_with(@picture, :location => ckeditor_pictures_path)
   end
   
   protected
