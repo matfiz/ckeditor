@@ -31,7 +31,9 @@ module Ckeditor
               field :width, :type => Integer
               field :height, :type => Integer
               
-              belongs_to :assetable, :polymorphic => true              
+              belongs_to :assetable, :polymorphic => true
+              
+              attr_accessible :data, :assetable_type, :assetable_id, :assetable
             end
           end
         end

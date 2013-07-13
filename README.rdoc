@@ -1,28 +1,28 @@
 = Ckeditor
 
-CKEditor is a ready-for-use HTML text editor designed to simplify web content creation. It's a WYSIWYG editor that brings common word processor features directly to your web pages. Enhance your website experience with our community maintained editor. http://ckeditor.com/
+CKEditor is a text editor to be used inside web pages. It's a WYSIWYG editor, which means that the text being edited on it looks as similar as possible to 
+the results users have when publishing it. It brings to the web common editing features found on desktop editing applications like Microsoft Word and OpenOffice.
 
 == Features
 
-* Ckeditor version 4.1.2 (full)
 * Rails 3.2 integration
 * Files browser
 * HTML5 files uploader
 * Hooks for formtastic and simple_form forms generators
+* Extra plugins: attachment and embed.
+* Assets pagination (under construction)
 
-== Installation
+== Install
 
-For basic usage just include ckeditor gem:
+Rails 3.2:
 
-  gem "ckeditor"
+  gem "ckeditor", "3.7.0.rc3"
 
-For files uploading support you need generage models for file storage.
-Currently supported next backends:
+Rails <= 3.0:
 
-* ActiveRecord (paperclip, carrierwave, dragonfly)
-* Mongoid (paperclip, carrierwave, dragonfly)
+  gem "ckeditor", "3.6.3"
 
-=== How generate models for store uploading files
+=== Now generate models for store uploading files
 
 ==== ActiveRecord + paperclip
 
@@ -52,47 +52,63 @@ For active_record orm is used paperclip gem (it's by default).
 
   rails generate ckeditor:install --orm=mongoid --backend=carrierwave
 
-==== Load generated models
+Available orms:
+* active_record
+* mongoid (Thanks Dmitry Lihachev https://github.com/lda)
+* mongo_mapper (under construction)
 
-All ckeditor models will be generated into app/models/ckeditor folder.
+
 Autoload ckeditor models folder (application.rb):
 
   config.autoload_paths += %W(#{config.root}/app/models/ckeditor)
 
-Mount engine in your routes (config/routes.rb):
-
-  mount Ckeditor::Engine => "/ckeditor"
-
 == Usage
 
-Include ckeditor javascripts rails 3.2 (application.js):
+Include ckeditor javascripts rails 3.2:
 
   //= require ckeditor/init
 
+or
+
+  <%= javascript_include_tag "ckeditor/init" %>  
+
+
+Rails <= 3.0:
+
+  <%= javascript_include_tag :ckeditor %>
+
 Form helpers:
+
+  cktext_area_tag("test_area", "Ckeditor is the best")
+
+  cktext_area_tag("content", "Ckeditor", :input_html => {:cols => 10, :rows => 20}, :toolbar => 'Easy')
+  
+* input_html - Options for text_area tag, others for ckeditor javascript configuration.
+* language - appends automatically, by default is I18n.locale
+* available ckeditor options - http://docs.cksource.com/ckeditor_api/symbols/CKEDITOR.config.html
+
+For configure ckeditor default options check:
+
+  public/javascripts/ckeditor/config.js
+  
+This stylesheet use editor for displaying edit area:
+
+  public/javascripts/ckeditor/contents.css
+
+FormBuilder helper for more usefully:
 
   <%= form_for @page do |form| -%>
     ...
-    <%= form.cktext_area :notes, :class => "someclass", :ckeditor => {:language => "uk"} %>
+    <%= form.cktext_area :notes, :toolbar => 'Full', :width => 800, :height => 400 %>
     ...
-    <%= form.cktext_area :content, :value => "Default value", :id => "sometext" %>
+    <%= form.cktext_area :content, :input_html => { :value => "Default value" } %>
     ...
-    <%= cktext_area :page, :info, :ckeditor => {:uiColor => "#AADC6E", :toolbar => "mini"} %>
-    ...
+    <%= cktext_area :page, :info %>
   <% end -%>
-
-
-All ckeditor 4.0 options here http://docs.ckeditor.com/#!/api/CKEDITOR.config
-
-In order to configure the ckeditor default options, create files:
-
-  app/assets/javascripts/ckeditor/config.js
-
-  app/assets/javascripts/ckeditor/contents.css
 
 === AJAX
 
-jQuery sample:
+Jquery sample:
 
   <script type='text/javascript' charset='UTF-8'>
     $(document).ready(function(){  
@@ -107,33 +123,61 @@ jQuery sample:
 === Formtastic integration
 
   <%= form.input :content, :as => :ckeditor %>
-  <%= form.input :content, :as => :ckeditor, :input_html => { :ckeditor => { :height => 400 } } %>
+  <%= form.input :content, :as => :ckeditor, :input_html => { :height => 400 } %>
 
 === SimpleForm integration
 
-  <%= form.input :content, :as => :ckeditor, :input_html => { :ckeditor => {:toolbar => 'Full'} } %>
+  <%= form.input :content, :as => :ckeditor, :label => false, :input_html => { :toolbar => 'Full' } %>
 
-=== CanCan integration
+=== Default scope
 
-To use cancan with Ckeditor, add this to an initializer.
+For example, you need split assets collection for each user.
 
-  # in config/initializers/ckeditor.rb
+  class ApplicationController < ActionController::Base
+  
+    protected
+      
+      def ckeditor_filebrowser_scope(options = {})
+        super({ :assetable_id => current_user.id, :assetable_type => 'User' }.merge(options))
+      end
+  end
+  
+If your wont filter only pictures or attachment_files - redefine methods "ckeditor_pictures_scope" or "ckeditor_attachment_files_scope" respectively.
+By default, both these methods call "ckeditor_filebrowser_scope" method:
 
-  Ckeditor.setup do |config|
-    config.authorize_with :cancan
+  class ApplicationController < ActionController::Base
+  
+    protected
+
+      def ckeditor_pictures_scope(options = {})
+        ckeditor_filebrowser_scope(options)
+      end
+          
+      def ckeditor_attachment_files_scope(options = {})
+        ckeditor_filebrowser_scope(options)
+      end
   end
 
-At this point, all authorization will fail and no one will be able to access the filebrowser pages.
-To grant access, add this to Ability#initialize
+=== Callbacks
+
+  class ApplicationController < ActionController::Base
   
-  # Always performed
-  can :access, :ckeditor   # needed to access Ckeditor filebrowser
+    protected
+      
+      # Cancan example
+      def ckeditor_authenticate
+        authorize! action_name, @asset
+      end
+      
+      # Set current_user as assetable
+      def ckeditor_before_create_asset(asset)
+        asset.assetable = current_user
+        return true
+      end
+  end
 
-  # Performed checks for actions:
-  can [:read, :create, :destroy], Ckeditor::Picture
-  can [:read, :create, :destroy], Ckeditor::AttachmentFile
 
-== I18n
+== I18n  
 
   en:
     ckeditor:

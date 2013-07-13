@@ -6,10 +6,6 @@ module Ckeditor
           def filename
             data_file_name
           end
-
-          def size
-            data_file_size
-          end
           
           def has_dimensions?
             respond_to?(:width) && respond_to?(:height)

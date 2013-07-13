@@ -21,10 +21,7 @@ module Ckeditor
       
       module InstanceMethods
         def geometry
-          @geometry ||= begin
-            file = data.respond_to?(:queued_for_write) ? data.queued_for_write[:original] : data.to_file
-            ::Paperclip::Geometry.from_file(file)
-          end
+          @geometry ||= ::Paperclip::Geometry.from_file(data.to_file)
         end
                 
         protected

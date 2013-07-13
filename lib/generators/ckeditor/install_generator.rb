@@ -13,7 +13,7 @@ module Ckeditor
         :desc => "Backend processor for upload support"
       
       class_option :backend, :type => :string, :default => 'paperclip',
-        :desc => "paperclip (default), carrierwave, or dragonfly"
+        :desc => "Paperclip (by default) or carrierwave"
       
       def self.source_root
         @source_root ||= File.expand_path(File.join(File.dirname(__FILE__), 'templates'))
@@ -26,10 +26,6 @@ module Ckeditor
       # copy configuration
       def copy_initializer
         template "ckeditor.rb", "config/initializers/ckeditor.rb"
-
-        if backend == "dragonfly"
-          template File.join("base", "dragonfly", "initializer.rb"), "config/initializers/ckeditor_dragonfly.rb"
-        end
       end
       
       def mount_engine
@@ -72,11 +68,11 @@ module Ckeditor
         end
         
         def orm
-          (options[:orm] || "active_record").to_s
+          options[:orm] || "active_record"
         end
         
         def backend
-          (options[:backend] || "paperclip").to_s
+          options[:backend] || "paperclip"
         end
     end
   end
